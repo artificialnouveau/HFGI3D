@@ -16,7 +16,7 @@ from utils.models_utils import toogle_grad, load_old_G
 import numpy as np
 
 class BaseCoach:
-    def __init__(self, data_loader,paths_config, multi_views,use_wandb):
+    def __init__(self, data_loader,paths_config, multi_views,use_wandb, device):
 
         self.use_wandb = use_wandb
         self.data_loader = data_loader
@@ -24,6 +24,7 @@ class BaseCoach:
         self.multi_views = multi_views
         self.w_pivots = {}
         self.image_counter = 0
+        self.device = device
 
         if hyperparameters.first_inv_type == 'w+':
             self.initilize_e4e()
@@ -35,7 +36,7 @@ class BaseCoach:
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
 
         # Initialize loss
-        self.lpips_loss = LPIPS(net=hyperparameters.lpips_type).to(global_config.device).eval()
+        self.lpips_loss = LPIPS(net=hyperparameters.lpips_type).to(device).eval()
 
         self.restart_training()
 
@@ -57,7 +58,7 @@ class BaseCoach:
         self.optimizer = self.configure_optimizers()
 
 
-    def get_inversion(self, w_path_dir, image_name, image):
+    def get_inversion(self, w_path_dir, image_name, image, device):
         embedding_dir = f'{w_path_dir}/{self.paths_config.pti_results_keyword}/{image_name}'
         os.makedirs(embedding_dir, exist_ok=True)
 
@@ -70,10 +71,10 @@ class BaseCoach:
             w_pivot = self.calc_inversions(image, image_name)
             torch.save(w_pivot, f'{embedding_dir}/0.pt')
 
-        w_pivot = w_pivot.to(global_config.device)
+        w_pivot = w_pivot.to(device)
         return w_pivot
 
-    def load_inversions(self, w_path_dir, image_name):
+    def load_inversions(self, w_path_dir, image_name, device):
         if image_name in self.w_pivots:
             return self.w_pivots[image_name]
 
@@ -84,19 +85,19 @@ class BaseCoach:
         if not os.path.isfile(w_potential_path):
             return None
         #breakpoint()
-        w = torch.load(w_potential_path).to(global_config.device)
+        w = torch.load(w_potential_path).to(device)
         self.w_pivots[image_name] = w
         return w
 
-    def calc_inversions(self, image, pose,image_name):
+    def calc_inversions(self, image, pose,image_name, device):
         
         if hyperparameters.first_inv_type == 'w+':
             w = self.get_e4e_inversion(image)
 
         else:
-            id_image = torch.squeeze((image.to(global_config.device) + 1) / 2) * 255
-            pose = pose.to(global_config.device)
-            w = w_plus_projector.project(self.G, id_image,pose, device=torch.device(global_config.device), w_avg_samples=600,
+            id_image = torch.squeeze((image.to(device) + 1) / 2) * 255
+            pose = pose.to(device)
+            w = w_plus_projector.project(self.G, id_image,pose, device=torch.device(device), w_avg_samples=600,
                                     num_steps=hyperparameters.first_inv_steps, w_name=image_name,
                                     use_wandb=self.use_wandb)
 
