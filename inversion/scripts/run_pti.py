@@ -18,7 +18,7 @@ from utils.ImagesDataset import ImagesDataset
 
 def run_PTI(path_config,run_name='',multi_views=False,use_wandb=False, use_multi_id_training=False):
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = global_config.cuda_visible_devices
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
     if run_name == '':
         global_config.run_name = ''.join(choice(ascii_uppercase) for i in range(12))
