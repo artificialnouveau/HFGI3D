@@ -68,6 +68,7 @@ class SingleIDCoach(BaseCoach):
 
     def __init__(self, data_loader,paths_config, multi_views,use_wandb,device):
         super().__init__(data_loader, paths_config,multi_views,use_wandb,device)
+        self.device = device
 
     def train(self):
 
@@ -91,11 +92,11 @@ class SingleIDCoach(BaseCoach):
               teacher_img = source_transform(teacher_img)
               teacher_imgs.append(teacher_img)
 
-          teacher_imgs = torch.stack(teacher_imgs,dim=0).to(device)
+          teacher_imgs = torch.stack(teacher_imgs,dim=0).to(self.device)
   
        
         for fname, image , pose in tqdm(self.data_loader):
-            pose = pose.to(device)
+            pose = pose.to(self.device)
             image_name = fname[0]
 
             self.restart_training()
@@ -117,12 +118,12 @@ class SingleIDCoach(BaseCoach):
                   w_pivot = self.load_inversions(w_path_dir, image_name)
 
            
-            w_pivot = w_pivot.to(device)
+            w_pivot = w_pivot.to(self.device)
 
             torch.save(w_pivot, f'{embedding_dir}/0.pt')
             log_images_counter = 0
-            real_images_batch = image.to(device)
-            cam_pivot = torch.Tensor([0.,0.,0.2]).to(device)
+            real_images_batch = image.to(self.device)
+            cam_pivot = torch.Tensor([0.,0.,0.2]).to(self.device)
             num_keyframes = 30
             render_poses = []
            
@@ -131,9 +132,9 @@ class SingleIDCoach(BaseCoach):
                 yaw_range = 0.35
                 cam2world_pose = LookAtPoseSampler.sample(3.14/2 + yaw_range * np.sin(2 * 3.14 * frame_idx / (num_keyframes)),
                                                             3.14/2 -0.05 + pitch_range * np.cos(2 * 3.14 * frame_idx / (num_keyframes)),
-                                                            cam_pivot, radius=2.7, device=device)
+                                                            cam_pivot, radius=2.7, device=self.device)
             
-                intrinsics = torch.tensor([[4.2647, 0, 0.5], [0, 4.2647, 0.5], [0, 0, 1]], device=device)
+                intrinsics = torch.tensor([[4.2647, 0, 0.5], [0, 4.2647, 0.5], [0, 0, 1]], device=self.device)
                 c = torch.cat([cam2world_pose.reshape(-1, 16), intrinsics.reshape(-1, 9)], 1)
                 render_poses.append(c)
      
@@ -180,9 +181,9 @@ class SingleIDCoach(BaseCoach):
                         yaw_range = 0.35
                         cam2world_pose = LookAtPoseSampler.sample(3.14/2 + yaw_range * np.sin(2 * 3.14 * frame_idx / (num_keyframes)),
                                                                     3.14/2 -0.05 + pitch_range * np.cos(2 * 3.14 * frame_idx / (num_keyframes)),
-                                                                    cam_pivot, radius=2.7, device=device)
+                                                                    cam_pivot, radius=2.7, device=self.device)
                     
-                        intrinsics = torch.tensor([[4.2647, 0, 0.5], [0, 4.2647, 0.5], [0, 0, 1]], device=device)
+                        intrinsics = torch.tensor([[4.2647, 0, 0.5], [0, 4.2647, 0.5], [0, 0, 1]], device=self.device)
                         c = torch.cat([cam2world_pose.reshape(-1, 16), intrinsics.reshape(-1, 9)], 1)
                         
                         img,_ = self.forward(w_pivot,c,eval=True)
@@ -221,9 +222,9 @@ class SingleIDCoach(BaseCoach):
                         yaw_range = 0.35
                         cam2world_pose = LookAtPoseSampler.sample(3.14/2 + yaw_range * np.sin(2 * 3.14 * frame_idx / (num_keyframes)),
                                                                     3.14/2 -0.05 + pitch_range * np.cos(2 * 3.14 * frame_idx / (num_keyframes)),
-                                                                    cam_pivot, radius=2.7, device=device)
+                                                                    cam_pivot, radius=2.7, device=self.device)
                     
-                        intrinsics = torch.tensor([[4.2647, 0, 0.5], [0, 4.2647, 0.5], [0, 0, 1]], device=device)
+                        intrinsics = torch.tensor([[4.2647, 0, 0.5], [0, 4.2647, 0.5], [0, 0, 1]], device=self.device)
                         c = torch.cat([cam2world_pose.reshape(-1, 16), intrinsics.reshape(-1, 9)], 1)
                         
                         img,_= self.forward(w_pivot,c,eval=True)
